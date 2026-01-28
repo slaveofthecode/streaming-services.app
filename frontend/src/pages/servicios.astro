@@ -1,0 +1,222 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Badge from '../components/Badge.astro';
+import { Service } from '../types';
+
+let services = [];
+let error = '';
+let loading = true;
+
+try {
+  const response = await fetch('http://localhost:3001/api/services');
+  if (response.ok) {
+    services = await response.json();
+  } else {
+    error = 'Error al cargar servicios';
+  }
+} catch (e) {
+  error = 'No se pudo conectar con el servidor';
+  console.error(error, e);
+} finally {
+  loading = false;
+}
+---
+
+<BaseLayout title="Servicios">
+  <div class="mb-8 flex justify-between items-center">
+    <h2 class="text-2xl font-bold">Servicios de Streaming</h2>
+    <button class="btn btn-primary" id="btn-add-service">
+      + Nuevo Servicio
+    </button>
+  </div>
+
+  {error && (
+    <div class="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+      {error}
+    </div>
+  )}
+
+  {loading ? (
+    <div class="text-center py-8">
+      <p class="text-gray-600">Cargando servicios...</p>
+    </div>
+  ) : services.length === 0 ? (
+    <div class="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+      <p class="text-gray-600 mb-4">No hay servicios creados</p>
+      <button class="btn btn-primary" id="btn-add-service-empty">
+        Crear Primer Servicio
+      </button>
+    </div>
+  ) : (
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {services.map((service) => (
+        <div class="card">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3 class="text-lg font-semibold">{service.name}</h3>
+              <p class="text-sm text-gray-600">{service.description}</p>
+            </div>
+            <Badge
+              text={service.isActive ? 'Activo' : 'Inactivo'}
+              type={service.isActive ? 'success' : 'error'}
+            />
+          </div>
+
+          <div class="mb-4 pb-4 border-b border-gray-200">
+            <p class="text-2xl font-bold text-primary">
+              ${service.currentPrice.toFixed(2)}
+            </p>
+            <p class="text-xs text-gray-600">Precio mensual</p>
+          </div>
+
+          <div class="flex gap-2">
+            <button
+              class="btn btn-outline text-sm flex-1"
+              data-service-id={service.id}
+              id={`edit-service-${service.id}`}
+            >
+              Editar
+            </button>
+            <button
+              class="btn btn-outline text-sm flex-1"
+              data-service-id={service.id}
+              id={`delete-service-${service.id}`}
+            >
+              {service.isActive ? 'Desactivar' : 'Eliminar'}
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+
+  <!-- Modal para añadir/editar servicio -->
+  <div id="service-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+      <div class="border-b border-gray-200 px-6 py-4">
+        <h2 class="text-xl font-bold" id="modal-title">Nuevo Servicio</h2>
+      </div>
+      <form id="service-form" class="px-6 py-4 space-y-4">
+        <div>
+          <label class="label">Nombre del Servicio</label>
+          <input
+            type="text"
+            id="service-name"
+            class="input"
+            placeholder="Netflix, Spotify, etc."
+            required
+          />
+        </div>
+        <div>
+          <label class="label">Descripción</label>
+          <textarea
+            id="service-description"
+            class="input"
+            placeholder="Describe el servicio"
+            rows="3"
+            required></textarea>
+        </div>
+        <div>
+          <label class="label">Precio Mensual ($)</label>
+          <input
+            type="number"
+            id="service-price"
+            class="input"
+            placeholder="9.99"
+            step="0.01"
+            required
+          />
+        </div>
+        <div class="flex gap-3 pt-4">
+          <button type="button" class="btn btn-outline flex-1" id="btn-cancel">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary flex-1">
+            Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const modal = document.getElementById('service-modal');
+    const form = document.getElementById('service-form') as HTMLFormElement;
+    const btnAdd = document.getElementById('btn-add-service');
+    const btnAddEmpty = document.getElementById('btn-add-service-empty');
+    const btnCancel = document.getElementById('btn-cancel');
+
+    function openModal(title) {
+      const modalTitle = document.getElementById('modal-title');
+      if (modalTitle) modalTitle.textContent = title;
+      form.reset();
+      modal?.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      modal?.classList.add('hidden');
+    }
+
+    btnAdd?.addEventListener('click', () => openModal('Nuevo Servicio'));
+    btnAddEmpty?.addEventListener('click', () => openModal('Nuevo Servicio'));
+    btnCancel?.addEventListener('click', closeModal);
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const data = {
+        name: (document.getElementById('service-name') as HTMLInputElement)
+          .value,
+        description: (
+          document.getElementById('service-description') as HTMLTextAreaElement
+        ).value,
+        currentPrice: parseFloat(
+          (document.getElementById('service-price') as HTMLInputElement).value
+        ),
+      };
+
+      try {
+        const response = await fetch('http://localhost:3001/api/services', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        if (response.ok) {
+          closeModal();
+          location.reload();
+        } else {
+          alert('Error al crear servicio');
+        }
+      } catch (error) {
+        alert('Error: ' + (error as Error).message);
+      }
+    });
+
+    // Delete service buttons
+    document.querySelectorAll('[id^="delete-service-"]').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        const serviceId = (e.target as HTMLElement).getAttribute('data-service-id');
+        if (
+          confirm(
+            '¿Estás seguro de que deseas desactivar este servicio?'
+          )
+        ) {
+          try {
+            const response = await fetch(
+              `http://localhost:3001/api/services/${serviceId}/deactivate`,
+              {
+                method: 'PATCH',
+              }
+            );
+            if (response.ok) {
+              location.reload();
+            }
+          } catch (error) {
+            alert('Error: ' + (error as Error).message);
+          }
+        }
+      });
+    });
+  </script>
+</BaseLayout>

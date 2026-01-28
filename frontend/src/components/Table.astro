@@ -1,0 +1,27 @@
+---
+const columns = Astro.props.columns;
+const data = Astro.props.data;
+---
+
+<div class="overflow-x-auto">
+  <table class="w-full">
+    <thead>
+      <tr class="border-b-2 border-gray-300">
+        {columns.map((col) => (
+          <th class="text-left py-3 px-4 font-semibold text-gray-700">{col}</th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {data.map((row) => (
+        <tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+          {columns.map((col) => (
+            <td class="py-3 px-4 text-gray-600">
+              {row[col.toLowerCase().replace(' ', '_')]}
+            </td>
+          ))}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>

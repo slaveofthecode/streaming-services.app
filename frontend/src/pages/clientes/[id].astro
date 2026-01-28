@@ -1,0 +1,344 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Badge from '../../components/Badge.astro';
+import { Client, Subscription, Service, Payment } from '../../types';
+
+const { id } = Astro.params;
+
+let client = null;
+let services = [];
+let error = '';
+let loading = true;
+
+try {
+  const clientRes = await fetch(`http://localhost:3001/api/clients/${id}`);
+  const servicesRes = await fetch('http://localhost:3001/api/services');
+
+  if (clientRes.ok) {
+    const clientData = await clientRes.json();
+    const subsRes = await fetch(
+      `http://localhost:3001/api/subscriptions/client/${id}`
+    );
+
+    if (subsRes.ok) {
+      clientData.subscriptions = await subsRes.json();
+    }
+
+    const paymentsRes = await fetch(
+      `http://localhost:3001/api/billing/client/${id}/payments`
+    );
+    if (paymentsRes.ok) {
+      clientData.payments = await paymentsRes.json();
+    }
+
+    client = clientData;
+  } else {
+    error = 'Cliente no encontrado';
+  }
+
+  if (servicesRes.ok) {
+    services = await servicesRes.json();
+  }
+} catch (e) {
+  error = 'Error al cargar datos del cliente';
+  console.error(error, e);
+} finally {
+  loading = false;
+}
+
+if (!client) {
+  window.location.href = '/clientes';
+}
+---
+
+<BaseLayout title={`Cliente: ${client.name}`}>
+  {error && (
+    <div class="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+      {error}
+    </div>
+  )}
+
+  {loading ? (
+    <div class="text-center py-8">
+      <p class="text-gray-600">Cargando cliente...</p>
+    </div>
+  ) : (
+    <>
+      <div class="mb-8">
+        <a href="/clientes" class="text-primary hover:underline">← Volver</a>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Cliente Info -->
+        <div class="lg:col-span-2">
+          <div class="card">
+            <div class="flex justify-between items-start mb-6">
+              <div>
+                <h2 class="text-2xl font-bold">{client.name}</h2>
+                <p class="text-gray-600">{client.email}</p>
+              </div>
+              <Badge
+                text={client.isActive ? 'Activo' : 'Inactivo'}
+                type={client.isActive ? 'success' : 'error'}
+              />
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p class="text-gray-600">Teléfono</p>
+                <p class="font-medium">{client.phone || 'No registrado'}</p>
+              </div>
+              <div>
+                <p class="text-gray-600">Dirección</p>
+                <p class="font-medium">{client.address || 'No registrada'}</p>
+              </div>
+              <div>
+                <p class="text-gray-600">Fecha de Registro</p>
+                <p class="font-medium">
+                  {new Date(client.createdAt).toLocaleDateString('es-ES')}
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-6 pt-6 border-t border-gray-200">
+              <button class="btn btn-outline" id="btn-edit-client">
+                Editar Cliente
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="card">
+          <h3 class="text-lg font-semibold mb-4">Resumen</h3>
+          <div class="space-y-3">
+            <div>
+              <p class="text-sm text-gray-600">Suscripciones Activas</p>
+              <p class="text-2xl font-bold text-primary">
+                {client.subscriptions?.filter((s) => s.status === 'active')
+                  .length || 0}
+              </p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-600">Total Pagado</p>
+              <p class="text-2xl font-bold text-secondary">
+                ${(
+                  client.payments?.reduce(
+                    (sum, p) => (p.status === 'paid' ? sum + p.amount : sum),
+                    0
+                  ) || 0
+                ).toFixed(2)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Suscripciones -->
+      <div class="card mb-8">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-lg font-semibold">Suscripciones</h3>
+          <button id="btn-add-subscription" class="btn btn-primary text-sm">
+            + Nueva Suscripción
+          </button>
+        </div>
+
+        {(!client.subscriptions || client.subscriptions.length === 0) ? (
+          <div class="text-center py-8 text-gray-600">
+            No hay suscripciones
+          </div>
+        ) : (
+          <div class="space-y-3">
+            {client.subscriptions.map((sub) => (
+              <div class="border border-gray-200 rounded-lg p-4 flex justify-between items-center">
+                <div>
+                  <p class="font-semibold">{sub.service.name}</p>
+                  <p class="text-sm text-gray-600">
+                    ${sub.service.currentPrice.toFixed(2)}/mes desde{' '}
+                    {new Date(sub.startDate).toLocaleDateString('es-ES')}
+                  </p>
+                </div>
+                <div class="flex items-center gap-4">
+                  <Badge
+                    text={sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
+                    type={
+                      sub.status === 'active'
+                        ? 'success'
+                        : sub.status === 'paused'
+                          ? 'warning'
+                          : 'error'
+                    }
+                  />
+                  <button
+                    class="btn btn-outline text-sm px-3 py-1"
+                    data-subscription-id={sub.id}
+                    id={`action-sub-${sub.id}`}
+                  >
+                    {sub.status === 'active' ? 'Pausar' : 'Reanudar'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <!-- Pagos -->
+      <div class="card">
+        <h3 class="text-lg font-semibold mb-6">Historial de Pagos</h3>
+
+        {(!client.payments || client.payments.length === 0) ? (
+          <div class="text-center py-8 text-gray-600">
+            No hay pagos registrados
+          </div>
+        ) : (
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b-2 border-gray-300">
+                  <th class="text-left py-3 px-2 font-semibold">Mes</th>
+                  <th class="text-left py-3 px-2 font-semibold">Monto</th>
+                  <th class="text-left py-3 px-2 font-semibold">Estado</th>
+                  <th class="text-left py-3 px-2 font-semibold">Fecha de Pago</th>
+                </tr>
+              </thead>
+              <tbody>
+                {client.payments.map((payment) => (
+                  <tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="py-3 px-2">{payment.billingMonth}</td>
+                    <td class="py-3 px-2 font-medium">
+                      ${payment.amount.toFixed(2)}
+                    </td>
+                    <td class="py-3 px-2">
+                      <Badge
+                        text={payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                        type={
+                          payment.status === 'paid'
+                            ? 'success'
+                            : payment.status === 'pending'
+                              ? 'warning'
+                              : 'error'
+                        }
+                      />
+                    </td>
+                    <td class="py-3 px-2 text-gray-600">
+                      {payment.paidDate
+                        ? new Date(payment.paidDate).toLocaleDateString('es-ES')
+                        : '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <!-- Modal para añadir suscripción -->
+      <div id="subscription-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+          <div class="border-b border-gray-200 px-6 py-4">
+            <h2 class="text-xl font-bold">Nueva Suscripción</h2>
+          </div>
+          <form id="subscription-form" class="px-6 py-4 space-y-4">
+            <div>
+              <label class="label">Servicio</label>
+              <select id="subscription-service" class="input" required>
+                <option value="">Selecciona un servicio</option>
+                {services.map((service) => (
+                  <option value={service.id}>
+                    {service.name} - ${service.currentPrice.toFixed(2)}/mes
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div class="flex gap-3 pt-4">
+              <button
+                type="button"
+                class="btn btn-outline flex-1"
+                id="btn-cancel-subscription"
+              >
+                Cancelar
+              </button>
+              <button type="submit" class="btn btn-primary flex-1">
+                Suscribir
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </>
+  )}
+
+  <script>
+    const subModal = document.getElementById('subscription-modal');
+    const subForm = document.getElementById('subscription-form');
+    const btnAddSub = document.getElementById('btn-add-subscription');
+    const btnCancelSub = document.getElementById('btn-cancel-subscription');
+    const subService = document.getElementById('subscription-service');
+
+    const clientId = id;
+
+    btnAddSub?.addEventListener('click', () => {
+      subModal?.classList.remove('hidden');
+    });
+
+    btnCancelSub?.addEventListener('click', () => {
+      subModal?.classList.add('hidden');
+    });
+
+    subForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const serviceId = parseInt(subService.value);
+
+      try {
+        const response = await fetch(
+          'http://localhost:3001/api/subscriptions',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              clientId,
+              serviceId,
+            }),
+          }
+        );
+
+        if (response.ok) {
+          alert('Suscripción añadida');
+          location.reload();
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    });
+
+    // Subscription action buttons
+    document.querySelectorAll('[id^="action-sub-"]').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        const subId = btn.getAttribute('data-subscription-id');
+        const currentStatus = btn.textContent?.includes('Pausar')
+          ? 'active'
+          : 'paused';
+        const newStatus = currentStatus === 'active' ? 'paused' : 'active';
+
+        try {
+          const response = await fetch(
+            `http://localhost:3001/api/subscriptions/${subId}`,
+            {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: newStatus }),
+            }
+          );
+
+          if (response.ok) {
+            location.reload();
+          }
+        } catch (error) {
+          alert('Error: ' + error.message);
+        }
+      });
+    });
+  </script>
+</BaseLayout>

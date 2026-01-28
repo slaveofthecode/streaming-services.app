@@ -1,0 +1,19 @@
+---
+const { label, value, icon, color = 'primary' } = Astro.props;
+
+const colorMap = {
+  primary: 'bg-blue-50 text-primary',
+  secondary: 'bg-green-50 text-secondary',
+  accent: 'bg-amber-50 text-accent',
+};
+---
+
+<div class={`card ${colorMap[color]}`}>
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-sm text-gray-600 mb-2">{label}</p>
+      <p class="text-3xl font-bold">{value}</p>
+    </div>
+    {icon && <div class="text-4xl opacity-20">{icon}</div>}
+  </div>
+</div>

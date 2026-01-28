@@ -1,0 +1,136 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import StatCard from '../components/StatCard.astro';
+
+let stats = {
+  totalClients: 0,
+  activeSubscriptions: 0,
+  totalRevenue: 0,
+  totalServices: 0,
+};
+
+let error = '';
+
+try {
+  const [clientsRes, subscriptionsRes, servicesRes] = await Promise.all([
+    fetch('http://localhost:3001/api/clients'),
+    fetch('http://localhost:3001/api/subscriptions'),
+    fetch('http://localhost:3001/api/services'),
+  ]);
+
+  if (clientsRes.ok) {
+    const clients = await clientsRes.json();
+    stats.totalClients = clients.length;
+  }
+
+  if (subscriptionsRes.ok) {
+    const subscriptions = await subscriptionsRes.json();
+    stats.activeSubscriptions = subscriptions.filter(
+      s => s.status === 'active'
+    ).length;
+  }
+
+  if (servicesRes.ok) {
+    const services = await servicesRes.json();
+    stats.totalServices = services.length;
+  }
+
+  // Calculate total revenue
+  const billingRes = await fetch('http://localhost:3001/api/billing/monthly');
+  if (billingRes.ok) {
+    const billing = await billingRes.json();
+    stats.totalRevenue = billing.totalAmount || 0;
+  }
+} catch (e) {
+  error = 'Error al cargar datos del dashboard';
+  console.error(error, e);
+}
+---
+
+<BaseLayout title="Dashboard">
+  {error && (
+    <div class="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+      {error}
+    </div>
+  )}
+
+  <div class="mb-8">
+    <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <StatCard
+        label="Clientes Activos"
+        value={stats.totalClients}
+        icon="👥"
+        color="primary"
+      />
+      <StatCard
+        label="Suscripciones Activas"
+        value={stats.activeSubscriptions}
+        icon="✓"
+        color="secondary"
+      />
+      <StatCard
+        label="Servicios"
+        value={stats.totalServices}
+        icon="📺"
+        color="accent"
+      />
+      <StatCard
+        label="Ingresos Mensuales"
+        value={`$${stats.totalRevenue.toFixed(2)}`}
+        icon="💰"
+        color="primary"
+      />
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="card">
+      <h3 class="text-lg font-semibold mb-4">Acceso Rápido</h3>
+      <div class="space-y-3">
+        <a
+          href="/servicios"
+          class="block p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+        >
+          <p class="font-medium text-primary">Gestionar Servicios</p>
+          <p class="text-sm text-gray-600">Añadir, editar o eliminar servicios de streaming</p>
+        </a>
+        <a
+          href="/clientes"
+          class="block p-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+        >
+          <p class="font-medium text-secondary">Gestionar Clientes</p>
+          <p class="text-sm text-gray-600">Administrar clientes y sus suscripciones</p>
+        </a>
+        <a
+          href="/billing"
+          class="block p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors"
+        >
+          <p class="font-medium text-accent">Ver Billing</p>
+          <p class="text-sm text-gray-600">Revisar pagos y facturación mensual</p>
+        </a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="text-lg font-semibold mb-4">Información del Sistema</h3>
+      <div class="space-y-2 text-sm text-gray-600">
+        <p>
+          <strong>Versión:</strong> 1.0.0
+        </p>
+        <p>
+          <strong>Backend:</strong> NestJS + PostgreSQL
+        </p>
+        <p>
+          <strong>Frontend:</strong> Astro + TypeScript
+        </p>
+        <p>
+          <strong>Estado:</strong>
+          <span class="inline-block ml-2 px-2 py-1 bg-green-100 text-green-700 rounded text-xs"
+            >En Línea</span
+          >
+        </p>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
