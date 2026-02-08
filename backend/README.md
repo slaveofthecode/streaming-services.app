@@ -15,7 +15,7 @@ Sistema backend profesional para gestionar suscripciones a servicios de streamin
 
 ## Requisitos
 
-- Node.js 18+ 
+- Node.js 18+
 - PostgreSQL 12+
 - npm o yarn
 
@@ -76,6 +76,7 @@ npm run start:dev
 El servidor estará disponible en `http://localhost:3001`
 
 Verifica que funcione visitando:
+
 - `http://localhost:3001` - Mensaje de bienvenida
 - `http://localhost:3001/health` - Health check
 
@@ -84,6 +85,7 @@ Verifica que funcione visitando:
 ### Servicios
 
 #### Crear servicio
+
 ```http
 POST /api/services
 Content-Type: application/json
@@ -97,16 +99,19 @@ Content-Type: application/json
 ```
 
 #### Obtener todos los servicios
+
 ```http
 GET /api/services
 ```
 
 #### Obtener servicio por ID
+
 ```http
 GET /api/services/:id
 ```
 
 #### Actualizar precio de servicio
+
 ```http
 PUT /api/services/:id/price
 Content-Type: application/json
@@ -118,11 +123,13 @@ Content-Type: application/json
 ```
 
 #### Obtener historial de precios
+
 ```http
 GET /api/services/:id/price-history
 ```
 
 #### Desactivar servicio
+
 ```http
 PUT /api/services/:id/deactivate
 ```
@@ -132,6 +139,7 @@ PUT /api/services/:id/deactivate
 ### Clientes
 
 #### Crear cliente
+
 ```http
 POST /api/clients
 Content-Type: application/json
@@ -145,16 +153,19 @@ Content-Type: application/json
 ```
 
 #### Obtener todos los clientes
+
 ```http
 GET /api/clients
 ```
 
 #### Obtener cliente por ID
+
 ```http
 GET /api/clients/:id
 ```
 
 #### Actualizar cliente
+
 ```http
 PUT /api/clients/:id
 Content-Type: application/json
@@ -166,11 +177,13 @@ Content-Type: application/json
 ```
 
 #### Obtener suscripciones del cliente
+
 ```http
 GET /api/clients/:id/subscriptions
 ```
 
 #### Desactivar cliente
+
 ```http
 PUT /api/clients/:id/deactivate
 ```
@@ -180,6 +193,7 @@ PUT /api/clients/:id/deactivate
 ### Suscripciones
 
 #### Crear suscripción (cliente se suscribe a servicio)
+
 ```http
 POST /api/subscriptions
 Content-Type: application/json
@@ -191,16 +205,19 @@ Content-Type: application/json
 ```
 
 #### Obtener suscripciones activas del cliente
+
 ```http
 GET /api/subscriptions/client/:clientId
 ```
 
 #### Obtener todas las suscripciones activas
+
 ```http
 GET /api/subscriptions/active
 ```
 
 #### Cancelar suscripción
+
 ```http
 PUT /api/subscriptions/:id/cancel
 Content-Type: application/json
@@ -211,11 +228,13 @@ Content-Type: application/json
 ```
 
 #### Pausar suscripción
+
 ```http
 PUT /api/subscriptions/:id/pause
 ```
 
 #### Reanudar suscripción
+
 ```http
 PUT /api/subscriptions/:id/resume
 ```
@@ -225,37 +244,41 @@ PUT /api/subscriptions/:id/resume
 ### Billing (Facturación)
 
 #### Calcular total a cobrar a un cliente este mes
+
 ```http
 GET /api/billing/client/:clientId
 ```
 
 Respuesta:
+
 ```json
 {
-  "clientId": "uuid",
-  "clientName": "Juan Pérez",
-  "totalAmount": 209.98,
-  "services": [
-    {
-      "serviceName": "Netflix",
-      "price": 99.99,
-      "status": "active"
-    },
-    {
-      "serviceName": "Spotify",
-      "price": 109.99,
-      "status": "active"
-    }
-  ]
+	"clientId": "uuid",
+	"clientName": "Juan Pérez",
+	"totalAmount": 209.98,
+	"services": [
+		{
+			"serviceName": "Netflix",
+			"price": 99.99,
+			"status": "active"
+		},
+		{
+			"serviceName": "Spotify",
+			"price": 109.99,
+			"status": "active"
+		}
+	]
 }
 ```
 
 #### Calcular total a cobrar a todos los clientes
+
 ```http
 GET /api/billing/all
 ```
 
 #### Registrar pago
+
 ```http
 POST /api/billing/payment
 Content-Type: application/json
@@ -271,26 +294,31 @@ Content-Type: application/json
 ```
 
 #### Obtener historial de pagos de un cliente
+
 ```http
 GET /api/billing/payments/client/:clientId
 ```
 
 #### Obtener pagos de un mes específico
+
 ```http
 GET /api/billing/payments/monthly?year=2026&month=1
 ```
 
 #### Obtener resumen de pagos de un mes
+
 ```http
 GET /api/billing/payments/summary?year=2026&month=1
 ```
 
 #### Obtener pagos pendientes
+
 ```http
 GET /api/billing/payments/pending
 ```
 
 #### Actualizar estado de pago
+
 ```http
 PUT /api/billing/payments/:paymentId/status
 Content-Type: application/json
@@ -307,6 +335,7 @@ Content-Type: application/json
 ### Tablas
 
 **services** - Servicios de streaming
+
 - `id` (UUID)
 - `name` (string)
 - `description` (text)
@@ -317,6 +346,7 @@ Content-Type: application/json
 - `updatedAt` (timestamp)
 
 **clients** - Clientes
+
 - `id` (UUID)
 - `name` (string)
 - `email` (string, unique)
@@ -327,6 +357,7 @@ Content-Type: application/json
 - `updatedAt` (timestamp)
 
 **subscriptions** - Suscripciones de clientes
+
 - `id` (UUID)
 - `clientId` (UUID, FK)
 - `serviceId` (UUID, FK)
@@ -337,6 +368,7 @@ Content-Type: application/json
 - `updatedAt` (timestamp)
 
 **price_histories** - Historial de cambios de precio
+
 - `id` (UUID)
 - `serviceId` (UUID, FK)
 - `oldPrice` (decimal)
@@ -346,6 +378,7 @@ Content-Type: application/json
 - `effectiveFrom` (timestamp)
 
 **payments** - Registro de pagos
+
 - `id` (UUID)
 - `clientId` (UUID, FK)
 - `amount` (decimal)
@@ -362,36 +395,43 @@ Content-Type: application/json
 ## Flujo de Uso Típico
 
 ### 1. Crear servicios
+
 ```bash
 POST /api/services
 ```
 
 ### 2. Registrar clientes
+
 ```bash
 POST /api/clients
 ```
 
 ### 3. Los clientes se suscriben a servicios
+
 ```bash
 POST /api/subscriptions
 ```
 
 ### 4. Consultar lo que se debe cobrar cada mes
+
 ```bash
 GET /api/billing/all
 ```
 
 ### 5. Registrar pagos
+
 ```bash
 POST /api/billing/payment
 ```
 
 ### 6. Consultar reportes
+
 ```bash
 GET /api/billing/payments/summary?year=2026&month=1
 ```
 
 ### 7. Cambiar precio de servicio (afecta próximo mes)
+
 ```bash
 PUT /api/services/:id/price
 ```
@@ -409,14 +449,17 @@ const services = await response.json();
 console.log(services);
 
 // Ejemplo: Crear una suscripción
-const subscriptionResponse = await fetch('http://localhost:3001/api/subscriptions', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    clientId: 'uuid-cliente',
-    serviceId: 'uuid-servicio'
-  })
-});
+const subscriptionResponse = await fetch(
+	'http://localhost:3001/api/subscriptions',
+	{
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({
+			clientId: 'uuid-cliente',
+			serviceId: 'uuid-servicio',
+		}),
+	}
+);
 ```
 
 ---

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { Payment } from '../entities/payment.entity';
 import { Subscription } from '../entities/subscription.entity';
 import { Client } from '../entities/client.entity';
@@ -21,9 +21,13 @@ interface ClientBilling {
 @Injectable()
 export class BillingService {
   constructor(
+    @InjectRepository(Payment)
     private paymentsRepository: Repository<Payment>,
+    @InjectRepository(Subscription)
     private subscriptionsRepository: Repository<Subscription>,
+    @InjectRepository(Client)
     private clientsRepository: Repository<Client>,
+    @InjectRepository(Service)
     private servicesRepository: Repository<Service>,
   ) {}
 
@@ -111,14 +115,11 @@ export class BillingService {
    */
   async getMonthlyPayments(year: number, month: number): Promise<Payment[]> {
     const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0);
+    const endDate = new Date(year, month, 0, 23, 59, 59, 999);
 
     return await this.paymentsRepository.find({
       where: {
-        billingMonth: {
-          _type: 'date',
-          _value: startDate,
-        },
+        billingMonth: Between(startDate, endDate),
       },
       relations: ['client'],
       order: { createdAt: 'DESC' },
@@ -140,15 +141,16 @@ export class BillingService {
     >();
 
     for (const payment of payments) {
-      if (!summary.has(payment.clientId)) {
-        summary.set(payment.clientId, {
+      let record = summary.get(payment.clientId);
+      if (!record) {
+        record = {
           clientName: payment.client.name,
           totalPaid: 0,
           payments: [],
-        });
+        };
+        summary.set(payment.clientId, record);
       }
 
-      const record = summary.get(payment.clientId);
       record.totalPaid += parseFloat(payment.amount.toString());
       record.payments.push(payment);
     }
@@ -175,6 +177,10 @@ export class BillingService {
     status: string,
   ): Promise<Payment> {
     await this.paymentsRepository.update(paymentId, { status });
-    return await this.paymentsRepository.findOne({ where: { id: paymentId } });
+    const payment = await this.paymentsRepository.findOne({ where: { id: paymentId } });
+    if (!payment) {
+      throw new Error('Payment not found');
+    }
+    return payment;
   }
 }

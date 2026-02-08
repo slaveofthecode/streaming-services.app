@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client } from '../entities/client.entity';
 import { CreateClientDto, UpdateClientDto } from '../dtos/client.dto';
 
 @Injectable()
 export class ClientsService {
-  private clientsRepository: Repository<Client>;
-
-  constructor(clientsRepository: Repository<Client>) {
-    this.clientsRepository = clientsRepository;
-  }
+  constructor(
+    @InjectRepository(Client)
+    private clientsRepository: Repository<Client>,
+  ) {}
 
   async createClient(createClientDto: CreateClientDto): Promise<Client> {
     const client = this.clientsRepository.create(createClientDto);
@@ -23,10 +23,14 @@ export class ClientsService {
   }
 
   async getClientById(id: string): Promise<Client> {
-    return await this.clientsRepository.findOne({
+    const client = await this.clientsRepository.findOne({
       where: { id },
       relations: ['subscriptions', 'payments'],
     });
+    if (!client) {
+      throw new Error('Client not found');
+    }
+    return client;
   }
 
   async updateClient(
