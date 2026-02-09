@@ -31,7 +31,7 @@ export class Subscription {
   subscribedAt: Date;
 
   @Column({ type: 'timestamp', nullable: true })
-  cancelledAt: Date;
+  cancelledAt: Date | null;
 
   @UpdateDateColumn()
   updatedAt: Date;

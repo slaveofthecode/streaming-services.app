@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Subscription } from '../entities/subscription.entity';
 import { Service } from '../entities/service.entity';
@@ -11,8 +12,11 @@ import {
 @Injectable()
 export class SubscriptionsService {
   constructor(
+    @InjectRepository(Subscription)
     private subscriptionsRepository: Repository<Subscription>,
+    @InjectRepository(Service)
     private servicesRepository: Repository<Service>,
+    @InjectRepository(Client)
     private clientsRepository: Repository<Client>,
   ) {}
 
@@ -62,6 +66,10 @@ export class SubscriptionsService {
       where: { id: subscriptionId },
     });
 
+    if (!subscription) {
+      throw new Error('Subscription not found');
+    }
+
     subscription.status = 'cancelled';
     subscription.cancelledAt = new Date();
 
@@ -73,6 +81,10 @@ export class SubscriptionsService {
       where: { id: subscriptionId },
     });
 
+    if (!subscription) {
+      throw new Error('Subscription not found');
+    }
+
     subscription.status = 'paused';
     return await this.subscriptionsRepository.save(subscription);
   }
@@ -81,6 +93,10 @@ export class SubscriptionsService {
     const subscription = await this.subscriptionsRepository.findOne({
       where: { id: subscriptionId },
     });
+
+    if (!subscription) {
+      throw new Error('Subscription not found');
+    }
 
     subscription.status = 'active';
     return await this.subscriptionsRepository.save(subscription);

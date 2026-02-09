@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Service } from '../entities/service.entity';
 import { PriceHistory } from '../entities/price-history.entity';
@@ -7,7 +8,9 @@ import { CreateServiceDto, UpdateServicePriceDto } from '../dtos/service.dto';
 @Injectable()
 export class ServicesService {
   constructor(
+    @InjectRepository(Service)
     private servicesRepository: Repository<Service>,
+    @InjectRepository(PriceHistory)
     private priceHistoryRepository: Repository<PriceHistory>,
   ) {}
 
@@ -23,10 +26,14 @@ export class ServicesService {
   }
 
   async getServiceById(id: string): Promise<Service> {
-    return await this.servicesRepository.findOne({
+    const service = await this.servicesRepository.findOne({
       where: { id },
       relations: ['subscriptions', 'priceHistories'],
     });
+    if (!service) {
+      throw new Error('Service not found');
+    }
+    return service;
   }
 
   async updateServicePrice(

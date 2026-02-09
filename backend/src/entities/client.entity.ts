@@ -14,10 +14,10 @@ export class Client {
   email: string;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
-  phone: string;
+  phone: string | null;
 
   @Column({ type: 'text', nullable: true })
-  address: string;
+  address: string | null;
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;

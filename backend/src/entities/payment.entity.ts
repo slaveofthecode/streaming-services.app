@@ -23,13 +23,13 @@ export class Payment {
   paymentMethod: string; // 'stripe', 'paypal', 'manual', etc.
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  externalTransactionId: string;
+  externalTransactionId: string | null;
 
   @Column({ type: 'date' })
   billingMonth: Date; // Mes al que corresponde el pago
 
   @Column({ type: 'text', nullable: true })
-  notes: string;
+  notes: string | null;
 
   @CreateDateColumn()
   createdAt: Date;
