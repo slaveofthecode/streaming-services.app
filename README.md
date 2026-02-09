@@ -5,6 +5,7 @@ Sistema profesional de gestión de suscripciones a servicios de streaming.
 ## 📦 Descripción
 
 Una aplicación full-stack para gestionar:
+
 - **Servicios de streaming** con precios variables
 - **Clientes** y sus suscripciones
 - **Billing automático** mensual
@@ -20,6 +21,7 @@ Una aplicación full-stack para gestionar:
 ## 🚀 Inicio Rápido
 
 ### Requisitos Previos
+
 - Node.js >= 18
 - PostgreSQL >= 12
 - npm o yarn
@@ -27,12 +29,72 @@ Una aplicación full-stack para gestionar:
 ### Instalación y Ejecución
 
 **1. Clonar el repositorio:**
+
 ```bash
 git clone https://github.com/tu-usuario/streaming-services.app.git
 cd streaming-services.app
 ```
 
+**1.1 Instalar y levantar docker:**
+
+Crear archivo .yml
+
+```code
+mi-proyecto/
+├── frontend/          (tu Astro)
+├── backend/           (tu NestJS)
+├── docker-compose.yml ← AQUÍ
+└── README.md
+```
+
+Agregar lo siguiente
+
+```bash
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: streaming_subscriptions_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: streaming_subscriptions
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+```
+
+Crear o setear archivo .env
+
+```bash
+# PostgreSQL (valores del docker-compose.yml)
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+DB_DATABASE=streaming_subscriptions
+
+# App
+API_PORT=3001
+NODE_ENV=development
+
+# Opcional: URL para migraciones u otras herramientas
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/streaming_subscriptions
+```
+
+Desde la raíz del proyecto:
+
+```bash
+docker compose up -d
+```
+
 **2. Configurar Base de Datos:**
+
 ```bash
 psql -U postgres
 CREATE DATABASE streaming_subscriptions;
@@ -40,6 +102,7 @@ CREATE DATABASE streaming_subscriptions;
 ```
 
 **3. Setup del Backend (Terminal 1):**
+
 ```bash
 cd backend
 npm install
@@ -47,9 +110,11 @@ cp .env.example .env
 # Edita .env si es necesario
 npm run start:dev
 ```
+
 El backend estará disponible en: `http://localhost:3001`
 
 **4. Setup del Frontend (Terminal 2):**
+
 ```bash
 cd frontend
 npm install
@@ -57,6 +122,7 @@ cp .env.example .env
 # Asegúrate que API_URL=http://localhost:3001
 npm run dev
 ```
+
 La aplicación estará disponible en: `http://localhost:3000`
 
 ## 📚 Documentación
@@ -70,30 +136,35 @@ La aplicación estará disponible en: `http://localhost:3000`
 ## 📋 Funcionalidades Principales
 
 ### Dashboard
+
 - Estadísticas generales del sistema
 - Total de clientes activos
 - Ingresos mensuales proyectados
 - Gráficos y métricas en tiempo real
 
 ### Gestión de Servicios
+
 - CRUD de servicios de streaming
 - Cambio de precios (aplica al siguiente mes)
 - Historial de cambios de precio
 - Activar/desactivar servicios
 
 ### Gestión de Clientes
+
 - CRUD de clientes
 - Vista detallada por cliente
 - Historial de suscripciones
 - Historial de pagos
 
 ### Suscripciones
+
 - Suscribir clientes a servicios
 - Pausar/reanudar suscripciones
 - Cancelar suscripciones
 - Estado en tiempo real
 
 ### Billing y Pagos
+
 - Cálculo automático mensual
 - Total a cobrar por cliente
 - Registro de pagos
@@ -103,23 +174,25 @@ La aplicación estará disponible en: `http://localhost:3000`
 ## 🛠️ Tech Stack
 
 ### Backend
+
 ```json
 {
-  "@nestjs/core": "^10.x",
-  "@nestjs/common": "^10.x",
-  "typeorm": "^0.3.x",
-  "pg": "^8.x",
-  "class-validator": "^0.14.x",
-  "class-transformer": "^0.5.x"
+	"@nestjs/core": "^10.x",
+	"@nestjs/common": "^10.x",
+	"typeorm": "^0.3.x",
+	"pg": "^8.x",
+	"class-validator": "^0.14.x",
+	"class-transformer": "^0.5.x"
 }
 ```
 
 ### Frontend
+
 ```json
 {
-  "astro": "^4.x",
-  "typescript": "^5.x",
-  "tailwindcss": "^3.x"
+	"astro": "^4.x",
+	"typescript": "^5.x",
+	"tailwindcss": "^3.x"
 }
 ```
 
@@ -168,12 +241,14 @@ streaming-services.app/
 ### En Vercel
 
 **Backend:**
+
 1. Crea un nuevo proyecto en Vercel
 2. Selecciona la carpeta `backend`
 3. Configura variables de entorno
 4. Deploy automático en cada push
 
 **Frontend:**
+
 1. Crea un nuevo proyecto en Vercel
 2. Selecciona la carpeta `frontend`
 3. Configura `API_URL` apuntando a tu backend
@@ -184,6 +259,7 @@ Ver [SETUP.md](/SETUP.md) para detalles completos.
 ## 🤝 Contribuir
 
 Las contribuciones son bienvenidas. Por favor:
+
 1. Fork el proyecto
 2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
 3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
@@ -197,6 +273,7 @@ Este proyecto está bajo la licencia MIT. Ver el archivo LICENSE para más detal
 ## 📞 Soporte
 
 Si tienes preguntas o encuentras problemas:
+
 1. Revisa la [documentación](/SETUP.md)
 2. Abre un issue en GitHub
 3. Contacta al desarrollador
